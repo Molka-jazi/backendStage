@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const db = require("../models");
 
-
 // get all users
 router.get("/all", (req, res) => {
   db.users.findAll().then(users => res.send(users));
@@ -20,13 +19,13 @@ router.get("/find/:id", (req, res) => {
 });
 
 
+
 // post new users
 router.post("/new", (req, res) => {
   db.users.create({
     text: req.body.text
   }).then(submitedusers => res.send(submitedusers));
 });
-
 
 
 // delete users
@@ -37,8 +36,6 @@ router.delete("/delete/:id", (req, res) => {
     }
   }).then(() => res.send("success"));
 });
-
-
 
 // edit a users
 router.put("/edit", (req, res) => {
@@ -52,13 +49,7 @@ router.put("/edit", (req, res) => {
   ).then(() => res.send("success"));
 });
 
-
-
 module.exports = router;
-
-
-
-
 
 
 
