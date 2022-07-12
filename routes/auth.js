@@ -1,105 +1,109 @@
 const router = require("express").Router();
 const { check, validationResult } = require("express-validator");
-const JWT = require("jsonwebtoken")
-const bcrypt = require('bcrypt');
-const { users } = require("../db")
+const JWT = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const { users } = require("../db");
+var { Sequelize } = require("sequelize");
+var bodyParser = require("body-parser");
+const db = require("../db");
+const { application } = require("express");
 
 // SIGNUP
-router.post("/signup",[
-    check("email", "Please input a valid email")
-        .isEmail(),
-    check("password", "Please input a password with a min length of 6")
-        .isLength({min: 6})
-], async (req, res) => {
+router.post(
+  "/signup",
+  [
+    check("email", "Please input a valid email").isEmail(),
+    check(
+      "password",
+      "Please input a password with a min length of 6"
+    ).isLength({ min: 6 }),
+  ],
+  async (req, res) => {
     const { password, email } = req.body;
-   // console.log( password, email);
-   // res.send("auth is working");
+   
 
-
-    // Validate the inputs 
+    // Validate the inputs
     const errors = validationResult(req);
 
-    if(!errors.isEmpty()){
-        return res.status(422).json({
-            errors: errors.array()
-        })
+    if (!errors.isEmpty()) {
+      return res.status(422).json({
+        errors: errors.array(),
+      });
     }
 
     // Validate if the user doesnt already exist;
-    let user = users.find((user) => {
-        return user.email === email
-    });
-
-    if(user) {
-        return res.status(422).json({
-            errors: [
-                {
-                    msg: "This user already exists",
-                }
-            ]
-        })
+    let user = await users.findOne({ where: { email: email } });
+    if (user) {
+      return res.status(422).json({
+        errors: [
+          {
+            msg: "This user already exists",
+          },
+        ],
+      });
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-     console.log(hashedPassword)
+    console.log(hashedPassword);
     // Save the password into the db
-    users.push({
-        email,
-        password: hashedPassword
+    users.create({
+      email,
+      password: hashedPassword,
     });
 
-    const token = await JWT.sign({ email }, "nfb32iur32ibfqfvi3vf932bg932g932", {expiresIn: 360000});
+    const token = await JWT.sign(
+      { email },
+      "nfb32iur32ibfqfvi3vf932bg932g932",
+      { expiresIn: 360000 }
+    );
 
     res.json({
-        token
-    })
-})
+      token,
+    });
+  }
+);
 
 // LOGIN
-router.post('/login', async (req, res) => {
-    const { email, password } = req.body
-    // Check if user with email exists
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
 
-    let user = users.find((user) => {
-        return user.email === email
+  // Check if user with email exists
+  let user = await users.findOne({ where: { email: email } });
+
+  if (!user) {
+    return res.status(422).json({
+      errors: [
+        {
+          msg: "Invalid Credentials users",
+        },
+      ],
     });
+  }
 
-    if(!user){
-        return res.status(422).json({
-            errors: [
-                {
-                    msg: "Invalid Credentials users",
-                }
-            ]
-        })
-    }
+  // Check if the password if valid
+  let isMatch = await bcrypt.compare(password, user.password);
 
-    // Check if the password if valid
-    let isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.status(404).json({
+      errors: [
+        {
+          msg: "Invalid Credentials ",
+        },
+      ],
+    });
+  }
 
-    if(!isMatch){
-        return res.status(404).json({
-            errors: [
-                {
-                    msg: "Invalid Credentials " 
-                }
-            ]
-        })
-    }
+  // Send JSON WEB TOKEN
+  const token = await JWT.sign({ email }, "nfb32iur32ibfqfvi3vf932bg932g932", {
+    expiresIn: 360000,
+  });
 
-    // Send JSON WEB TOKEN
-    const token = await JWT.sign({email}, "nfb32iur32ibfqfvi3vf932bg932g932", {expiresIn: 360000})
-
-    res.json({
-        token
-    })
-})
+  res.json({
+    token,
+  });
+});
 
 
-// ALL USER
-router.get("/all", (req, res) => {
-    res.json(users)
-})
 
-module.exports = router
+module.exports = router;
