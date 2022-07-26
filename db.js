@@ -16,7 +16,7 @@ const sequelize = new Sequelize("stage", "root", "", {
   operatorsAliases: 0,
 });  
 
-const users = sequelize.define("User", {
+const Users = sequelize.define("User", {
   id: {
     type: Sequelize.INTEGER,
     unique: true,
@@ -42,21 +42,6 @@ const users = sequelize.define("User", {
     type: Sequelize.DATE
   }
 });
-module.exports =  {users}
+module.exports =  {Users}
 
 
-
-/*const users = [
-    {
-        email: "harblaith@harb.com",
-        password: "asdasdas"
-    }
-]
-
-
-
-module.exports = {
-    users
-}
-
-*/
